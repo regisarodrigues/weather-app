@@ -1,22 +1,34 @@
 <script lang="ts">
   import type { IWeather } from 'src/interfaces/IWeather';
   import { API_KEY, URL_API, LANG } from '../utils/variaveis';
+  import ErrorAlert from './ErrorAlert.svelte';
+  import Loading from './Loading.svelte';
+  import WeatherData from './WeatherData.svelte';
 
-  let CITY_NAME = 'Franca';
+  let CITY_NAME: string = '';
 
-  let url = `${URL_API}/weather?q=${CITY_NAME}&units=metric&lang=${LANG}&appid=${API_KEY}`;
+  const getWeatherData = async (CITY_NAME: string = 'Franca') => {
+    const baseURL: string = `${URL_API}/weather?q=${CITY_NAME}&units=metric&lang=${LANG}&appid=${API_KEY}`;
 
-  async function getWeatherData<T>(request: RequestInfo): Promise<T> {
-    const response = await fetch(request);
-    const data = await response.json();
+    if (CITY_NAME.trim() === '') {
+      throw new Error('É nessesário informar uma cidade.');
+    }
+
+    const res: Response = await fetch(baseURL);
+
+    if (!res.ok) {
+      throw new Error('Cidade não encontrada.');
+    }
+
+    const data: IWeather = await res.json();
     return data;
-  }
+  };
 
-  let data = getWeatherData<IWeather>(url);
+  let data = getWeatherData();
 
   const handleSubmit = () => {
-    url = `${URL_API}/weather?q=${CITY_NAME}&units=metric&lang=${LANG}&appid=${API_KEY}`;
-    data = getWeatherData<IWeather>(url);
+    data = getWeatherData(CITY_NAME);
+    CITY_NAME = '';
   };
 </script>
 
@@ -41,46 +53,11 @@
     </div>
 
     {#await data}
-      <div class="text-center">
-        <div
-          class="spinner-border text-primary"
-          style="width: 4rem; height: 4rem; font: bold;"
-          role="status"
-        />
-      </div>
+      <Loading />
     {:then weather}
-      <div class="col-12 col-md-6">
-        <h1>
-          <img
-            style="background-color: #8cb3d9;"
-            src={` http://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`}
-            alt={weather.weather[0].description}
-          />
-          {weather.main.temp.toFixed()}°C
-        </h1>
-        <h4>
-          Cidade: <span class="fw-bold"
-            >{weather.name}, {weather.sys.country}</span
-          >
-        </h4>
-        <h4>
-          Tempo agora: <span class="fw-bold text-capitalize"
-            >{weather.weather[0].description}</span
-          >
-        </h4>
-      </div>
-      <div class="col-12 col-md-6">
-        <h4>
-          Temp. Maxima: <span class="fw-bold text-danger"
-            >{weather.main.temp_max.toFixed()}°C</span
-          >
-        </h4>
-        <h4>
-          Temp. Minima: <span class="fw-bold text-primary"
-            >{weather.main.temp_min.toFixed()}°C</span
-          >
-        </h4>
-      </div>
+      <WeatherData {weather} />
+    {:catch err}
+      <ErrorAlert {err} />
     {/await}
   </div>
 </div>

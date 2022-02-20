@@ -13,8 +13,10 @@ dist-ssr
 *.local
 
 # variaveis de abiente
-/utils
-variaveis.ts
+src/utils/variaveis.*
+
+
+
 
 # Editor directories and files
 .vscode/*
